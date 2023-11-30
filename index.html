@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Customer Survey</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Assistant&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .selected {
+        background-color: rgb(0, 0, 0);
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- HTML structure for the screens -->
+    <div id="welcome-screen" class="screen">
+      <h1>Welcome to Our Customer Survey</h1>
+      <button  id="start-btn">Start Survey</button>
+    </div>
+
+    <div id="survey-screen" class="screen">
+      <h1>Customer Survey</h1>
+      <h2 id="question-number" class="right-corner"></h2>
+      <p id="question"></p>
+      <div id="answers"></div>
+      <div class="button-container">
+        <button class="btn" id="prev-btn">Previous</button>
+        <button class="btn" id="next-btn">Next</button>
+        <button class="btn" id="skip-btn">Skip</button>
+        <button id="submit-btn">Submit</button>
+      </div>
+    </div>
+
+    <div id="thankyou-screen" class="screen">
+      <h1>Thank You for Your Time!</h1>
+    </div>
+
+    
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const welcomeScreen = document.getElementById("welcome-screen");
+        const surveyScreen = document.getElementById("survey-screen");
+        const thankyouScreen = document.getElementById("thankyou-screen");
+        const startBtn = document.getElementById("start-btn");
+        const questionNumber = document.getElementById("question-number");
+        const questionElement = document.getElementById("question");
+        const answersElement = document.getElementById("answers");
+        const prevBtn = document.getElementById("prev-btn");
+        const nextBtn = document.getElementById("next-btn");
+        const skipBtn = document.getElementById("skip-btn");
+        const submitBtn = document.getElementById("submit-btn");
+
+        const questions = [
+          {
+            id: 1,
+            text: "How satisfied are you with our products?",
+            type: "rating",
+          },
+          {
+            id: 2,
+            text: "How fair are the prices compared to similar retailers?",
+            type: "rating",
+          },
+          {
+            id: 3,
+            text: "How satisfied are you with the value for money of your purchase?",
+            type: "rating",
+          },
+          {
+            id: 4,
+            text: "On a scale of 1-10, how likely are you to recommend us to your friends and family?",
+            type: "rating",
+          },
+          {
+            id: 5,
+            text: "What could we do to improve our service?",
+            type: "text",
+          },
+        ];
+
+        let currentQuestionIndex = 0;
+        let answers = [];
+
+        function showWelcomeScreen() {
+          welcomeScreen.style.display = "block";
+          surveyScreen.style.display = "none";
+          thankyouScreen.style.display = "none";
+        }
+
+        function showSurveyScreen() {
+          welcomeScreen.style.display = "none";
+          surveyScreen.style.display = "block";
+          thankyouScreen.style.display = "none";
+
+          const currentQuestion = questions[currentQuestionIndex];
+          questionNumber.textContent = `${currentQuestionIndex + 1}/${
+            questions.length
+          }`;
+          questionElement.textContent = currentQuestion.text;
+          answersElement.innerHTML = "";
+
+          if (currentQuestion.type === "rating") {
+            for (let i = 1; i <= 5; i++) {
+              const answerBtn = document.createElement("button");
+              answerBtn.textContent = i;
+              answerBtn.addEventListener("click", () => saveAnswer(i));
+              answerBtn.addEventListener("click", () =>
+                toggleSelected(answerBtn)
+              );
+              answersElement.appendChild(answerBtn);
+            }
+          } else if (currentQuestion.type === "text") {
+            const answerTextarea = document.createElement("textarea");
+            answerTextarea.cols = "50";
+            answerTextarea.rows = "5";
+            answerTextarea.addEventListener("input", () =>
+              saveAnswer(answerTextarea.value)
+            );
+            answersElement.appendChild(answerTextarea);
+          }
+
+          updateButtons();
+        }
+
+        function showThankYouScreen() {
+          welcomeScreen.style.display = "none";
+          surveyScreen.style.display = "none";
+          thankyouScreen.style.display = "block";
+
+         
+          localStorage.setItem("surveyCompleted", "true");
+
+          setTimeout(() => {
+            showWelcomeScreen();
+          }, 5000);
+        }
+
+        function saveAnswer(answer) {
+          answers[currentQuestionIndex] = {
+            questionId: questions[currentQuestionIndex].id,
+            answer: answer,
+          };
+        }
+
+        function updateButtons() {
+          prevBtn.disabled = currentQuestionIndex === 0;
+          nextBtn.disabled = currentQuestionIndex === questions.length - 1;
+          skipBtn.style.display =
+            currentQuestionIndex === questions.length - 1
+              ? "none"
+              : "inline-block";
+          submitBtn.style.display =
+            currentQuestionIndex === questions.length - 1
+              ? "inline-block"
+              : "none";
+        }
+
+        function toggleSelected(button) {
+          const selectedButtons = answersElement.querySelectorAll(".selected");
+          selectedButtons.forEach((selectedButton) => {
+            selectedButton.classList.remove("selected");
+          });
+          button.classList.add("selected");
+        }
+
+        startBtn.addEventListener("click", () => {
+          currentQuestionIndex = 0;
+          answers = [];
+          showSurveyScreen();
+        });
+
+        prevBtn.addEventListener("click", () => {
+          currentQuestionIndex--;
+          showSurveyScreen();
+        });
+
+        nextBtn.addEventListener("click", () => {
+          currentQuestionIndex++;
+          showSurveyScreen();
+        });
+
+        skipBtn.addEventListener("click", () => {
+          currentQuestionIndex++;
+          if (currentQuestionIndex >= questions.length) {
+            showThankYouScreen();
+          } else {
+            showSurveyScreen();
+          }
+        });
+
+        submitBtn.addEventListener("click", () => {
+          
+          const confirmation = confirm(
+            "Are you sure you want to submit the survey?"
+          );
+          if (confirmation) {
+            showThankYouScreen();
+          }
+        });
+
+        
+        const surveyCompleted = localStorage.getItem("surveyCompleted");
+        if (!surveyCompleted && surveyCompleted == "true") {
+          showThankYouScreen();
+        } else {
+          showWelcomeScreen();
+        }
+      });
+    </script>
+  </body>
+</html>
